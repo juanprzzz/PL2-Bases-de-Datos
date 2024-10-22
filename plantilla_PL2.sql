@@ -28,7 +28,7 @@ CREATE TABLE IF NO EXISTS disco(
     nombre_grupo TEXT
     CONSTRAINT disco_pk PRIMARY KEY(titulo, anio_publicacion)
     CONSTRAINT disco_fk FOREIGN KEY(nombre_grupo) REFERENCES grupo(nombre_grupo) --mirar match full-------
-    -- Mirar delete y update -----------
+    -- Mirar delete y update ---------
 );
 CREATE TABLE IF NO EXISTS grupo(
     nombre_grupo TEXT,
