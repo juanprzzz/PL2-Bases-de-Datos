@@ -112,13 +112,13 @@ CREATE TABLE IF NOT EXISTS usuarioscsv(
 CREATE TABLE IF NOT EXISTS cancionescsv(
     idDisco INT,
     tituloCancion TEXT,
-    duracion, TEXT
+    duracion TEXT
     
 );
 CREATE TABLE IF NOT EXISTS edicionescsv(
     idDisco INT,
     añoEdicion SMALLINT,
-    paisEdicion, TEXT
+    paisEdicion TEXT,
     formato TEXT
 );
 CREATE TABLE IF NOT EXISTS usuarioDeseaDisco(
@@ -136,12 +136,12 @@ CREATE TABLE IF NOT EXISTS usuarioTieneEdicion(
     estado TEXT
 );
 
-COPY discocsv FROM 'discos.csv ' DELIMETER ';' CSV HEADER ENCODING UTF8 NULL "NULL"; ---tener en cuenta que puede haber nulos. cargar strings null como null real para que no lo cargue como text null
-COPY usuarioscsv FROM 'usuarios.csv ' DELIMETER ';' CSV HEADE ENCODING UTF8 NULL "NULL";
-COPY cancionescsv FROM 'canciones.csv ' DELIMETER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
-COPY edicionescsv FROM 'ediciones.csv ' DELIMETER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
-COPY usuarioDeseaDisco FROM 'usuario_desea_disco.csv ' DELIMETER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
-COPY usuarioTieneEdicion FROM 'usuario_tiene_edicion.csv ' DELIMETER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
+COPY discocsv FROM 'discos.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL 'NULL'; ---tener en cuenta que puede haber nulos. cargar strings null como null real para que no lo cargue como text null
+COPY usuarioscsv FROM 'usuarios.csv ' DELIMITER ';' CSV HEADE ENCODING UTF8 NULL "NULL";
+COPY cancionescsv FROM 'canciones.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
+COPY edicionescsv FROM 'ediciones.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
+COPY usuarioDeseaDisco FROM 'usuario_desea_disco.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
+COPY usuarioTieneEdicion FROM 'usuario_tiene_edicion.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
 
 ROLLBACK;
 
