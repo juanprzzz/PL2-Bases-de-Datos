@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS disco(
     anio_publicacion SMALLINT,
     nombre_grupo TEXT,
     CONSTRAINT disco_pk PRIMARY KEY (titulo,anio_publicacion,nombre_grupo),
-    CONSTRAINT disco_fk FOREIGN KEY (nombre_grupo) REFERENCES grupo(nombre_grupo) MATCH FULL 
+    CONSTRAINT disco_fk FOREIGN KEY (nombre_grupo) REFERENCES grupo(nombre_grupo) MATCH FULL
+    ON DELETE RESTRICT ON UPDATE CASCADE 
 );
 
 
@@ -43,6 +44,7 @@ CREATE TABLE IF NOT EXISTS genero(
     genero TEXT,
     CONSTRAINT genero_pk PRIMARY KEY (genero,titulo,anio_publicacion),
     CONSTRAINT genero_fk FOREIGN KEY (titulo,anio_publicacion) REFERENCES disco(titulo,anio_publicacion)  MATCH FULL
+    ON DELETE RESTRICT ON UPDATE CASCADE 
 );
 
 CREATE TABLE IF NOT EXISTS edicion(
@@ -52,7 +54,8 @@ CREATE TABLE IF NOT EXISTS edicion(
     pais text,
     anio_edicion SMALLINT,
     CONSTRAINT edicion_pk PRIMARY KEY (formato,anio_edicion,pais,titulo,anio_publicacion),
-    CONSTRAINT edicion_fk FOREIGN KEY (titulo,anio_publicacion) REFERENCES disco(titulo,anio_publicacion) MATCH FULL 
+    CONSTRAINT edicion_fk FOREIGN KEY (titulo,anio_publicacion) REFERENCES disco(titulo,anio_publicacion) MATCH FULL
+    ON DELETE RESTRICT ON UPDATE CASCADE  
 );
 
 CREATE TABLE IF NOT EXISTS cancion(
@@ -60,7 +63,8 @@ CREATE TABLE IF NOT EXISTS cancion(
     anio_publicacion SMALLINT, --falta duracion y sobra año??
     titulo_cancion TEXT,
     CONSTRAINT cancion_pk PRIMARY KEY (titulo_cancion,titulo,anio_publicacion),
-    CONSTRAINT cancion_fk FOREIGN KEY (titulo,anio_publicacion) REFERENCES disco(titulo,anio_publicacion)MATCH FULL  
+    CONSTRAINT cancion_fk FOREIGN KEY (titulo,anio_publicacion) REFERENCES disco(titulo,anio_publicacion)MATCH FULL
+    ON DELETE RESTRICT ON UPDATE CASCADE   
 );
 
 CREATE TABLE IF NOT EXISTS usuario(
@@ -78,8 +82,10 @@ CREATE TABLE IF NOT EXISTS desea( --disco-usuario
     titulo TEXT,
     anio_publicacion SMALLINT,
     nombre_usuario TEXT,
-    CONSTRAINT desea_disco_fk FOREIGN KEY (titulo,anio_publicacion) REFERENCES disco(titulo,anio_publicacion)MATCH FULL,
+    CONSTRAINT desea_disco_fk FOREIGN KEY (titulo,anio_publicacion) REFERENCES disco(titulo,anio_publicacion)MATCH FULL
+    ON DELETE RESTRICT ON UPDATE CASCADE, 
     CONSTRAINT desea_usuario_fk FOREIGN KEY (nombre_usuario) REFERENCES usuario(nombre_usuario)  MATCH FULL
+    ON DELETE RESTRICT ON UPDATE CASCADE 
 );
 
 CREATE TABLE IF NOT EXISTS tiene( --usuario-ediciones
@@ -89,8 +95,10 @@ CREATE TABLE IF NOT EXISTS tiene( --usuario-ediciones
     pais TEXT,
     anio_edicion SMALLINT,
     estado TEXT,
-    CONSTRAINT tiene_edicion_fk FOREIGN KEY (formato,anio_edicion,pais, titulo,anio_publicacion) REFERENCES edicion(formato,anio_edicion,pais,titulo,anio_publicacion) MATCH FULL,
-    CONSTRAINT tiene_usuario_fk FOREIGN KEY (nombre_usuario) REFERENCES usuario(nombre_usuario) MATCH FULL
+    CONSTRAINT tiene_edicion_fk FOREIGN KEY (formato,anio_edicion,pais, titulo,anio_publicacion) REFERENCES edicion(formato,anio_edicion,pais,titulo,anio_publicacion) MATCH FULL
+    ON DELETE RESTRICT ON UPDATE CASCADE, 
+    CONSTRAINT tiene_usuario_fk FOREIGN KEY (nombre_usuario) REFERENCES usuario(nombre_usuario) MATCH FULL --poner la coma antes de restrict???????
+    ON DELETE RESTRICT ON UPDATE CASCADE 
 );
 
 -----------------------------------------tablas temporales----------------------------------
