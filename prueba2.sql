@@ -19,7 +19,14 @@ restricciones de tabla=claves primarias (usar CONSTRAINT nombreidentificarclave 
 
 */
 --------------------------------Tablas finales----------------------------
+
 \echo 'creando el esquema para la BBDD de películas'
+
+CREATE TABLE IF NOT EXISTS grupo(
+    nombre_grupo TEXT,
+    URL TEXT,
+    CONSTRAINT grupo_pk PRIMARY KEY (nombre_grupo)
+);
 CREATE TABLE IF NOT EXISTS disco(
     titulo TEXT,
     anio_publicacion SMALLINT,
@@ -28,11 +35,6 @@ CREATE TABLE IF NOT EXISTS disco(
     CONSTRAINT disco_fk FOREIGN KEY (nombre_grupo) REFERENCES grupo(nombre_grupo) MATCH FULL 
 );
 
-CREATE TABLE IF NOT EXISTS grupo(
-    nombre_grupo TEXT,
-    URL TEXT,
-    CONSTRAINT grupo_pk PRIMARY KEY (nombre_grupo)
-);
 
 
 CREATE TABLE IF NOT EXISTS genero(
@@ -87,17 +89,17 @@ CREATE TABLE IF NOT EXISTS tiene( --usuario-ediciones
     pais TEXT,
     anio_edicion SMALLINT,
     estado TEXT,
-    CONSTRAINT tiene_edicion_fk FOREIGN KEY (formato,anio_edicion,pais, titulo,anio_publicacion) REFERENCES edicion(formato,anio_edicion,pais,titulo,anio_publicacion) MATCH FULL, 
+    CONSTRAINT tiene_edicion_fk FOREIGN KEY (formato,anio_edicion,pais, titulo,anio_publicacion) REFERENCES edicion(formato,anio_edicion,pais,titulo,anio_publicacion) MATCH FULL,
     CONSTRAINT tiene_usuario_fk FOREIGN KEY (nombre_usuario) REFERENCES usuario(nombre_usuario) MATCH FULL
 );
 
 -----------------------------------------tablas temporales----------------------------------
 \echo 'creando un esquema temporal'
 CREATE TABLE IF NOT EXISTS discoscsv(
-    idDisco INT,
+    idDisco TEXT,
     NombreDisco TEXT,
-    fechaLanzamiento SMALLINT,
-    --idGrupo INT,
+    fechaLanzamiento TEXT,
+    idGrupo TEXT,
     NombreGrupo TEXT,
     urlGrupo TEXT,
     generos TEXT,
@@ -110,39 +112,39 @@ CREATE TABLE IF NOT EXISTS usuarioscsv(
     passwd TEXT
 );
 CREATE TABLE IF NOT EXISTS cancionescsv(
-    idDisco INT,
+    idDisco TEXT,
     tituloCancion TEXT,
     duracion TEXT
     
 );
 CREATE TABLE IF NOT EXISTS edicionescsv(
-    idDisco INT,
-    añoEdicion SMALLINT,
+    idDisco TEXT,
+    añoEdicion TEXT,
     paisEdicion TEXT,
     formato TEXT
 );
 CREATE TABLE IF NOT EXISTS usuarioDeseaDisco(
     nombreUsuario TEXT,
     tituloDisco TEXT,
-    añoLanzamiento SMALLINT
+    añoLanzamiento TEXT
 );
 CREATE TABLE IF NOT EXISTS usuarioTieneEdicion(
     nombreUsuario TEXT,
     tituloDisco TEXT,
-    añoLanzamiento SMALLINT,
-    añoEdicion SMALLINT,
+    añoLanzamiento TEXT,
+    añoEdicion TEXT,
     paisEdicion TEXT,
     formato TEXT,
     estado TEXT
 );
 
-COPY discocsv FROM 'discos.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL 'NULL'; ---tener en cuenta que puede haber nulos. cargar strings null como null real para que no lo cargue como text null
-COPY usuarioscsv FROM 'usuarios.csv ' DELIMITER ';' CSV HEADE ENCODING UTF8 NULL "NULL";
-COPY cancionescsv FROM 'canciones.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
-COPY edicionescsv FROM 'ediciones.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
-COPY usuarioDeseaDisco FROM 'usuario_desea_disco.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
-COPY usuarioTieneEdicion FROM 'usuario_tiene_edicion.csv ' DELIMITER ';' CSV HEADER ENCODING UTF8 NULL "NULL";
-
+\COPY discoscsv FROM 'discos.csv' DELIMITER ';' CSV HEADER NULL 'NULL'; ---tener en cuenta que puede haber nulos. cargar strings null como null real para que no lo cargue como text null
+\COPY usuarioscsv FROM 'usuarios.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
+\COPY cancionescsv FROM 'canciones.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
+\COPY edicionescsv FROM 'ediciones.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
+\COPY usuarioDeseaDisco FROM 'usuario_desea_disco.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
+\COPY usuarioTieneEdicion FROM 'usuario_tiene_edicion.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
+\echo 'HTTP1.1 200 OK prueba2.sql'
 ROLLBACK;
 
 --para la hora: Make interval, split por los :, tochar(intervalo) h:m:s para coger el intervalo y pasarlo a caracteres , cast a time (con duracion::time)
