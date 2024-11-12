@@ -279,7 +279,14 @@ SELECT * FROM tiene LIMIT 10; ---MAL
 SELECT * FROM usuario LIMIT 10; 
 \d usuario;
 
+-------------------------CONSULTAS-------------------------
 
+
+--CONSULTA 1 (REVISAR)
+SELECT cancion.titulo_disco
+FROM disco JOIN cancion ON disco.titulo_disco = cancion.titulo_disco
+GROUP BY cancion.titulo_disco
+HAVING COUNT(cancion.titulo_disco) > 5;
 ROLLBACK;
 
 --para la hora: Make interval, split por los :, tochar(intervalo) h:m:s para coger el intervalo y pasarlo a caracteres , cast a time (con duracion::time)
