@@ -22,12 +22,12 @@ restricciones de tabla=claves primarias (usar CONSTRAINT nombreidentificarclave 
 
 \echo 'creando el esquema para la BBDD de películas'
 
-CREATE TABLE IF NOT EXISTS grupo(----------corregido
+CREATE TABLE IF NOT EXISTS grupo(
     nombre_grupo TEXT,
     URL TEXT, -------------------------me da miedo que este rojo
     CONSTRAINT grupo_pk PRIMARY KEY (nombre_grupo)
 );
-CREATE TABLE IF NOT EXISTS disco( ------------------------corregido
+CREATE TABLE IF NOT EXISTS disco(
     nombre_grupo TEXT,
 
     titulo_disco TEXT,
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS disco( ------------------------corregido
 
 
 
-CREATE TABLE IF NOT EXISTS genero( -----------------------corregido
+CREATE TABLE IF NOT EXISTS genero( 
     titulo_disco TEXT,
     anio_publicacion TEXT,
 
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS genero( -----------------------corregido
     ON DELETE RESTRICT ON UPDATE CASCADE 
 );
 
-CREATE TABLE IF NOT EXISTS edicion(-----------------------corregido
+CREATE TABLE IF NOT EXISTS edicion(
     titulo_disco TEXT,
     anio_publicacion TEXT,
 
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS edicion(-----------------------corregido
     ON DELETE RESTRICT ON UPDATE CASCADE  
 );
 
-CREATE TABLE IF NOT EXISTS cancion(-----------------------corregido
+CREATE TABLE IF NOT EXISTS cancion(
     titulo_disco TEXT,
     anio_publicacion TEXT,
     
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS cancion(-----------------------corregido
     ON DELETE RESTRICT ON UPDATE CASCADE   
 );
 
-CREATE TABLE IF NOT EXISTS usuario( --------corregido
+CREATE TABLE IF NOT EXISTS usuario( 
     nombre_usuario TEXT,
     nombre TEXT,
     email TEXT,
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS desea( --disco-usuario --corregido
     ON DELETE RESTRICT ON UPDATE CASCADE 
 );
 
-CREATE TABLE IF NOT EXISTS tiene( --usuario-ediciones ---Pero no sobra?
+CREATE TABLE IF NOT EXISTS tiene( --usuario-ediciones 
     formato TEXT,
     pais TEXT,
     anio_edicion TEXT,
@@ -166,7 +166,6 @@ CREATE TABLE IF NOT EXISTS usuarioTieneEdicion(
 INSERT INTO grupo (nombre_grupo, URL)
 SELECT DISTINCT NombreGrupo, urlGrupo ----distinct?
 FROM discoscsv;
----WHERE idGrupo IS NOT NULL;        no necesario creo
 \echo 'grupo hecho'
 
 INSERT INTO disco (titulo_disco, anio_publicacion, nombre_grupo, url_portada)
@@ -203,7 +202,6 @@ ON CONFLICT (formato, pais, anio_edicion) DO NOTHING;
 
 ----falta cancion, join?
 
-
 INSERT INTO usuario (nombre_usuario, nombre, email, passwd)
 SELECT  DISTINCT nombreUsuario,
        nombreCompleto,
@@ -231,15 +229,6 @@ FROM usuarioDeseaDisco JOIN usuario ON usuario.nombre_usuario = usuarioDeseaDisc
 \echo 'desea hecho'
 
 
-INSERT INTO edicion(titulo_disco, anio_publicacion, formato, pais, anio_edicion)
-SELECT DISTINCT disco.nombreDisco, 
-    disco.añoLanzamiento, 
-    edicion.formato, 
-    edicion.paisEdicion, 
-    edicion.añoEdicion
-FROM discoscsv disco JOIN edicionescsv edicion ON disco.idDisco = edicion.idDisco
-ON CONFLICT (formato, pais, anio_edicion) DO NOTHING;------------------------------------------------------
-
 --Esta aqui no? pero hay un problema con duración. por cierto lo de NULL; ya está puesto en el COPY, está puesto en el COPY que si encuentra "NULL" es NULL
 INSERT INTO cancion(titulo_disco, anio_publicacion, titulo_cancion, duracion)
 SELECT DISTINCT disco.NombreDisco, 
@@ -250,44 +239,168 @@ SELECT DISTINCT disco.NombreDisco,
             secs => split_part(cancion.duracion, ':', 2)::INTEGER) ::TIME --PROBAR QUE FUNCIONE --Duración es de la forma 00:00 hay que pasarlo a time
 FROM discoscsv disco JOIN cancionescsv cancion ON disco.idDisco = cancion.idDisco
 ON CONFLICT (titulo_disco, anio_publicacion, titulo_cancion) DO NOTHING;--Tengo que juntar las dos tablas para conseguir los datos que quiero
+\echo 'cancion hecho'
 
-INSERT INTO usuario(nombre_usuario, nombre, email, passwd)
-SELECT DISTINCT nombreUsuario, nombreCompleto, email, passwd
-FROM usuarioscsv
-ON CONFLICT(nombre_usuario) DO NOTHING;
+\echo '-----------------------MOSTRANDO TABLAS--------------------'
 
-
---INSERT INTO desea(titulo_disco, anio_publicacion, nombre_usuario)
---SELECT nombreDisco, CAST(fechaLanzamiento AS SMALLINT), nombreUsuario
---FRO
-
-SELECT * FROM cancion LIMIT 10; ----Duraciones 00:00:00
+SELECT * FROM cancion LIMIT 10; 
 \d cancion;
 SELECT * FROM desea LIMIT 10; ---Algunos indica año 0,en el csv original tambien, pero quizas lo pone para indicar null
 \d desea;
-SELECT * FROM disco LIMIT 10; --url portada ????
+SELECT * FROM disco LIMIT 10; 
 \d disco;
 SELECT * FROM edicion LIMIT 10; 
 \d edicion;
-SELECT * FROM genero LIMIT 10; ---MAL
+SELECT * FROM genero LIMIT 10; 
 \d genero;
 SELECT * FROM grupo LIMIT 10; 
 \d grupo;
 \echo "dsfsfds";
-SELECT * FROM tiene LIMIT 10; ---MAL
+SELECT * FROM tiene LIMIT 10; 
 \d tiene;
 SELECT * FROM usuario LIMIT 10; 
 \d usuario;
 
 -------------------------CONSULTAS-------------------------
+\echo '-----------------------MOSTRANDO CONSULTAS--------------------'
 
-
+\echo 'Consulta 1'
 --CONSULTA 1 (REVISAR)
+--1. Mostrar los discos que tengan más de 5 canciones. Construir la expresión equivalente en álgebra relacional.
 SELECT cancion.titulo_disco
-FROM disco JOIN cancion ON disco.titulo_disco = cancion.titulo_disco
+FROM disco JOIN cancion ON disco.titulo_disco = cancion.titulo_disco AND disco.anio_publicacion = cancion.anio_publicacion---faltaria aniopublicacion
 GROUP BY cancion.titulo_disco
-HAVING COUNT(cancion.titulo_disco) > 5;
+HAVING COUNT(cancion.titulo_disco) > 5
+LIMIT 10;
+
+\echo 'Consulta 2' ----------------vacia MAL
+--2. Mostrar los vinilos que tiene el usuario Juan García Gómez junto con el título del disco, y el país y año de edición del mismo
+SELECT edicion.titulo_disco, edicion.pais, edicion.anio_edicion
+FROM edicion JOIN tiene ON (edicion.formato=tiene.formato AND edicion.pais=tiene.pais AND edicion.anio_edicion=tiene.anio_edicion)
+    JOIN usuario ON tiene.nombre_usuario = usuario.nombre_usuario
+WHERE usuario.nombre_usuario='Juan García Gómez'
+LIMIT 10;
+
+\echo 'Consulta 3' 
+--revisar! -------------------------------------------------------------
+--3. Disco con mayor duración de la colección. Construir la expresión equivalente en álgebra relacional.
+SELECT  d.titulo_disco, --suponemos que por disco se refiere solo a la pk y duracion para comprobar
+        d.anio_publicacion, 
+        SUM(EXTRACT(EPOCH FROM c.duracion)) / 60 AS duracion_total --SUM(c.duracion) AS duracion_total
+FROM disco d JOIN cancion c ON d.titulo_disco = c.titulo_disco AND d.anio_publicacion = c.anio_publicacion
+WHERE c.duracion IS NOT NULL --si no pones esto no muestra la duracion del mayor (hace cosa rara.probar. muestra back to the drawing room 2015)
+GROUP BY d.titulo_disco, d.anio_publicacion --Como cada disco tiene varias canciones, necesitamos agrupar todas las canciones del mismo disco para poder sumar sus duraciones. Sin GROUP BY, el SUM(c.duracion) intentaría sumar todas las duraciones en una única cifra sin diferenciar los discos
+ORDER BY duracion_total desc
+LIMIT 1;
+
+\echo 'Consulta 4'--------------vacia. MAL
+--4. De los discos que tiene en su lista de deseos el usuario Juan García Gómez, indicar el nombre de los grupos musicales que los interpretan.
+SELECT  d.titulo_disco, 
+        d.anio_publicacion, 
+        d.nombre_grupo
+FROM usuario u JOIN desea ds ON u.nombre_usuario=ds.nombre_usuario
+    JOIN disco d ON ds.titulo_disco=d.titulo_disco AND ds.anio_publicacion=d.anio_publicacion
+WHERE u.nombre_usuario='Juan García Gómez'
+LIMIT 10;
+
+\echo 'Consulta 5'
+--5. Mostrar los discos publicados entre 1970 y 1972 junto con sus ediciones ordenados por el año de publicación.
+SELECT  d.titulo_disco, 
+        d.anio_publicacion, 
+        d.nombre_grupo,
+        e.formato,
+        e.pais,
+        e.anio_edicion
+FROM disco d JOIN edicion e ON e.titulo_disco=d.titulo_disco AND e.anio_publicacion=d.anio_publicacion
+WHERE CAST(d.anio_publicacion AS INTEGER)>=1970 AND CAST(d.anio_publicacion AS INTEGER)<=1972  ---se podria usar between tambien?
+ORDER BY d.anio_publicacion
+LIMIT 50;
+
+
+\echo 'Consulta 6'
+--6. Listar el nombre de todos los grupos que han publicado discos del género ‘Electronic’. Construir la expresión equivalente en álgebra relacional.
+SELECT DISTINCT d.nombre_grupo  --distinct para que cada grupo salga solo 1 vez
+FROM disco d JOIN genero g ON g.titulo_disco=d.titulo_disco AND g.anio_publicacion=d.anio_publicacion
+WHERE g.genero='Electronic'
+LIMIT 10;
+
+\echo 'Consulta 7'
+---------------------------   salen duraciones null. es normal?
+--revisar!-----------------------------------------------------------------------------------------------------
+--7. Lista de discos con la duración total del mismo, editados antes del año 2000.
+SELECT  d.titulo_disco, 
+        d.anio_publicacion,
+        e.anio_edicion, --sobra, debug
+        SUM(EXTRACT(EPOCH FROM c.duracion)) / 60 AS duracion_total --duracion en minutos . REVISAR?????????????????? 
+        --SUM(c.duracion) AS duracion_total
+FROM disco d JOIN edicion e ON e.titulo_disco=d.titulo_disco AND e.anio_publicacion=d.anio_publicacion
+    JOIN cancion c ON d.titulo_disco = c.titulo_disco AND d.anio_publicacion = c.anio_publicacion
+WHERE CAST(e.anio_edicion AS INTEGER)<=2000
+GROUP BY 
+    d.titulo_disco, d.anio_publicacion, e.anio_edicion --si no pongo esto da error
+ORDER BY e.anio_edicion desc --sobra, debug
+LIMIT 50;
+
+\echo 'Consulta 8'
+--8. Lista de ediciones de discos deseados por el usuario Lorena Sáez Pérez que tiene el usuario Juan García Gómez
+/*
+
+
+
+
+*/
+\echo 'Consulta 9' --MAL. vacio
+--9. Lista todas las ediciones de los discos que tiene el usuario Gómez García en un estado NM o M. Construir la expresión equivalente en álgebra relacional.
+SELECT  e.formato,
+        e.pais,
+        e.anio_edicion,
+        e.titulo_disco,
+        e.anio_publicacion
+FROM edicion e JOIN tiene t ON (e.formato=t.formato AND e.pais=t.pais AND e.anio_edicion=t.anio_edicion)
+WHERE t.nombre_usuario='Juan García Gómez' AND t.estado IN ('NM', 'M') --AND (t.estado='NM' OR t.estado='M')
+LIMIT 10;
+
+\echo 'Consulta 10'
+--10. Listar todos los usuarios junto al número de ediciones que tiene de todos los discos junto al año de lanzamiento de su disco más antiguo, el año de lanzamiento de su disco más nuevo, y el año medio de todos sus discos de su colección
+/*
+
+
+
+
+*/
+\echo 'Consulta 11'--MAL VACIO
+------------------------------------revisar
+--11. Listar el nombre de los grupos que tienen más de 5 ediciones de sus discos en la base de datos
+SELECT  d.nombre_grupo
+FROM disco d JOIN edicion e ON (e.titulo_disco = d.titulo_disco AND e.anio_publicacion = d.anio_publicacion)
+GROUP BY 
+    d.nombre_grupo
+HAVING 
+    COUNT(*) > 5
+LIMIT 10;
+
+\echo 'Consulta 12'
+--12. Lista el usuario que más discos, contando todas sus ediciones tiene en la base de datos
+SELECT  t.nombre_usuario,
+        COUNT(*) AS total_ediciones
+FROM tiene t
+GROUP BY t.nombre_usuario
+ORDER BY total_ediciones desc
+LIMIT 1;
+
+
+
+
+
+
+
+
+
+
+
+
 ROLLBACK;
+
 
 --para la hora: Make interval, split por los :, tochar(intervalo) h:m:s para coger el intervalo y pasarlo a caracteres , cast a time (con duracion::time)
 --para los generos: para quitar [''] con replace (solo reemplaza 1 char) o regexp_replace (meter expresion regular)
