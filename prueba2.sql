@@ -274,7 +274,7 @@ SELECT * FROM usuario LIMIT 10;
 \echo '-----------------------MOSTRANDO CONSULTAS--------------------'
 
 \echo 'Consulta 1'
---CONSULTA 1 (REVISAR)
+--CONSULTA 1 ---REVISADO
 --1. Mostrar los discos que tengan más de 5 canciones. Construir la expresión equivalente en álgebra relacional.
 SELECT cancion.titulo_disco
 FROM disco JOIN cancion ON disco.titulo_disco = cancion.titulo_disco AND disco.anio_publicacion = cancion.anio_publicacion---faltaria aniopublicacion
@@ -296,7 +296,6 @@ JOIN tiene ON (
 JOIN usuario ON tiene.nombre_usuario = usuario.nombre_usuario
 WHERE usuario.nombre_usuario = 'juangomez'
 LIMIT 10;
-
 \echo 'Consulta 3' 
 --revisar! -------------------------------------------------------------
 --3. Disco con mayor duración de la colección. Construir la expresión equivalente en álgebra relacional.
@@ -309,6 +308,17 @@ GROUP BY d.titulo_disco, d.anio_publicacion --Como cada disco tiene varias canci
 ORDER BY duracion_total desc
 LIMIT 1;
 
+\echo 'SOLUCIÓN CON SENTIDO PARA CONSULTA 3'
+SELECT c.titulo_disco, c.duracion
+FROM cancion c
+WHERE c.duracion = (SELECT MAX(c.duracion)
+                    FROM cancion c);
+
+\echo 'Si queremos la mayor duración de cada disco'
+SELECT c.titulo_disco, MAX(c.duracion)
+FROM cancion c
+GROUP BY c.titulo_disco;
+
 \echo 'Consulta 4'
 --4. De los discos que tiene en su lista de deseos el usuario Juan García Gómez, indicar el nombre de los grupos musicales que los interpretan.
 SELECT  d.titulo_disco, 
@@ -319,7 +329,12 @@ FROM usuario u JOIN desea ds ON u.nombre_usuario=ds.nombre_usuario
 WHERE u.nombre_usuario='juangomez'
 LIMIT 10;
 
-\echo 'Consulta 5'
+\echo 'Consulta 5' --REVISADO (QUITAR LIMIT) ¿Cómo puede salir antes una edición que un disco?
+SELECT e.*
+FROM edicion e JOIN disco d ON d.titulo_disco = e.titulo_disco AND d.anio_publicacion=e.anio_publicacion
+WHERE d.anio_publicacion BETWEEN '1970' AND '1972'
+ORDER BY d.titulo_disco, e.anio_publicacion
+LIMIT 5;
 --5. Mostrar los discos publicados entre 1970 y 1972 junto con sus ediciones ordenados por el año de publicación.
 /*SELECT  d.titulo_disco, 
         d.anio_publicacion, 
@@ -364,15 +379,17 @@ GROUP BY
     d.titulo_disco, d.anio_publicacion, e.anio_edicion --si no pongo esto da error
 ORDER BY e.anio_edicion desc --sobra, debug
 LIMIT 50;
-
-\echo 'Consulta 8'
---8. Lista de ediciones de discos deseados por el usuario Lorena Sáez Pérez que tiene el usuario Juan García Gómez
 /*
-
-
-
-
+\echo 'Consulta 8' --NO REVISADO
+--8. Lista de ediciones de discos deseados por el usuario Lorena Sáez Pérez que tiene el usuario Juan García Gómez
+SELECT d.*
+FROM desea d JOIN (SELECT t.*
+                FROM tiene t JOIN usuario u ON t.nombre_usuario = u.nombre_usuario
+                WHERE u.nombre = 'Ana López Fernández') s JOIN usuario u ON s.nombre_usuario = u.nombre_usuario
+WHERE u.nombre = 'Luis Gómez García';
 */
+
+
 \echo 'Consulta 9' 
 --9. Lista todas las ediciones de los discos que tiene el usuario Gómez García en un estado NM o M. Construir la expresión equivalente en álgebra relacional.
 SELECT  e.formato,
@@ -390,14 +407,12 @@ FROM edicion e JOIN tiene t ON (
 WHERE t.nombre_usuario='juangomez' AND t.estado IN ('NM', 'M') --AND (t.estado='NM' OR t.estado='M')
 LIMIT 10;
 
-\echo 'Consulta 10'
+\echo 'Consulta 10'---REVISADO (HAY AÑOS 0)
 --10. Listar todos los usuarios junto al número de ediciones que tiene de todos los discos junto al año de lanzamiento de su disco más antiguo, el año de lanzamiento de su disco más nuevo, y el año medio de todos sus discos de su colección
-/*
 
-
-
-
-*/
+SELECT u.nombre, COUNT(t.titulo_disco) AS Nº_ediciones, MIN(t.anio_publicacion) AS disco_más_antiguo, MAX(t.anio_publicacion) AS disco_más_nuevo, CAST(AVG(CAST(t.anio_publicacion AS SMALLINT))AS SMALLINT) AS media_años
+FROM usuario u JOIN tiene t ON u.nombre_usuario = t.nombre_usuario
+GROUP BY u.nombre;
 \echo 'Consulta 11'
 ------------------------------------revisar
 --11. Listar el nombre de los grupos que tienen más de 5 ediciones de sus discos en la base de datos
@@ -415,7 +430,19 @@ SELECT  t.nombre_usuario,
 FROM tiene t
 GROUP BY t.nombre_usuario
 ORDER BY total_ediciones desc
-LIMIT 1;
+LIMIT 1;--NO VALE CON LIMIT (LO DIJO EN CLASE)
+WITH total_ediciones AS(
+    SELECT t.nombre_usuario, COUNT(*) AS total_ediciones
+    FROM tiene t
+    GROUP BY t.nombre_usuario
+)--WITH ES UNA SUBCONSULTA (CREA UNA TABLA TEMPORAL DONDE SE MUESTRA CADA USUARIO Y TOTAL EDICIÓN DE CADA UNO)
+--DESPUÉS DEL WITH HAY QUE HACER SIEMPRE UNA CONSULTA (SERÍA ALGO ASÍ PERO HAY QUE PERFECCIONARLO (LO MIRARÉ))
+SELECT t.nombre_usuario, te.total_ediciones
+FROM tiene t JOIN total_ediciones te ON t.nombre_usuario = te.nombre_usuario
+WHERE te.total_ediciones=(SELECT MAX(total_ediciones)
+        FROM total_ediciones);
+
+
 
 
 
