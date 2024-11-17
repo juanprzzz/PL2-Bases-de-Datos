@@ -379,17 +379,23 @@ GROUP BY
     d.titulo_disco, d.anio_publicacion, e.anio_edicion --si no pongo esto da error
 ORDER BY e.anio_edicion desc --sobra, debug
 LIMIT 50;
+\echo 'Consulta 8' ----REVISADO (CAMBIAR NOMBRES YA QUE LORENA NO DESEABA NINGÚN DISCO DE JUAN GARCÍA GÓMEZ)
 /*
-\echo 'Consulta 8' --NO REVISADO
+
 --8. Lista de ediciones de discos deseados por el usuario Lorena Sáez Pérez que tiene el usuario Juan García Gómez
-SELECT d.*
-FROM desea d JOIN (SELECT t.*
-                FROM tiene t JOIN usuario u ON t.nombre_usuario = u.nombre_usuario
-                WHERE u.nombre = 'Ana López Fernández') s JOIN usuario u ON s.nombre_usuario = u.nombre_usuario
-WHERE u.nombre = 'Luis Gómez García';
+USAMOS SUBCONSULTA TEMPORAL CON WITH PARA SIMPLIFICAR
+PRIMERO CREAMOS UNA SUBCONSULTA CON WITH PARA SABER LOS DISCOS QUE TIENE JUAN GARCÍA GÓMEZ
 */
-
-
+WITH juan_gomez_tiene as(
+    SELECT t.titulo_disco, t.anio_publicacion
+    FROM tiene t JOIN usuario u ON t.nombre_usuario = u.nombre_usuario
+    WHERE u.nombre = 'Marta Díaz Moreno'
+)
+--AHORA HACEMOS UN JOIN ENTRE LOS QUE TIENE JUAN GARCÍA GÓMEZ Y LOS QUE DESEA LORENA (EN EL CSV NO HAY NINGUNO)
+SELECT d.titulo_disco, d.anio_publicacion
+FROM desea d JOIN juan_gomez_tiene jg ON d.titulo_disco=jg.titulo_disco
+JOIN usuario u ON u.nombre_usuario = d.nombre_usuario
+WHERE u.nombre = 'Marta Moreno Díaz';
 \echo 'Consulta 9' 
 --9. Lista todas las ediciones de los discos que tiene el usuario Gómez García en un estado NM o M. Construir la expresión equivalente en álgebra relacional.
 SELECT  e.formato,
@@ -425,16 +431,17 @@ HAVING
 
 \echo 'Consulta 12'
 --12. Lista el usuario que más discos, contando todas sus ediciones tiene en la base de datos
+/*
 SELECT  t.nombre_usuario,
         COUNT(*) AS total_ediciones
 FROM tiene t
 GROUP BY t.nombre_usuario
 ORDER BY total_ediciones desc
 LIMIT 1;--NO VALE CON LIMIT (LO DIJO EN CLASE)
+*/
 
 
-
-
+---REVISADO PERO, SI SON DOS LOS CUALES TIENEN MÁS DISCOS, MUESTRA ESOS DOS (LO CUAL ME PARECE CORRECTO)(DETALLE MENOR)
 WITH total_ediciones AS(
     SELECT t.nombre_usuario, COUNT(*) AS total_ediciones
     FROM tiene t
