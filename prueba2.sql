@@ -431,14 +431,18 @@ FROM tiene t
 GROUP BY t.nombre_usuario
 ORDER BY total_ediciones desc
 LIMIT 1;--NO VALE CON LIMIT (LO DIJO EN CLASE)
+
+
+
+
 WITH total_ediciones AS(
     SELECT t.nombre_usuario, COUNT(*) AS total_ediciones
     FROM tiene t
     GROUP BY t.nombre_usuario
 )--WITH ES UNA SUBCONSULTA (CREA UNA TABLA TEMPORAL DONDE SE MUESTRA CADA USUARIO Y TOTAL EDICIÓN DE CADA UNO)
 --DESPUÉS DEL WITH HAY QUE HACER SIEMPRE UNA CONSULTA (SERÍA ALGO ASÍ PERO HAY QUE PERFECCIONARLO (LO MIRARÉ))
-SELECT t.nombre_usuario, te.total_ediciones
-FROM tiene t JOIN total_ediciones te ON t.nombre_usuario = te.nombre_usuario
+SELECT u.nombre_usuario, te.total_ediciones
+FROM usuario u JOIN total_ediciones te ON u.nombre_usuario = te.nombre_usuario
 WHERE te.total_ediciones=(SELECT MAX(total_ediciones)
         FROM total_ediciones);
 
