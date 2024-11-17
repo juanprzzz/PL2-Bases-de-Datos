@@ -440,7 +440,7 @@ WITH total_ediciones AS(
     FROM tiene t
     GROUP BY t.nombre_usuario
 )--WITH ES UNA SUBCONSULTA (CREA UNA TABLA TEMPORAL DONDE SE MUESTRA CADA USUARIO Y TOTAL EDICIÓN DE CADA UNO)
---DESPUÉS DEL WITH HAY QUE HACER SIEMPRE UNA CONSULTA (SERÍA ALGO ASÍ PERO HAY QUE PERFECCIONARLO (LO MIRARÉ))
+--DESPUÉS DEL WITH HAY QUE HACER SIEMPRE UNA CONSULTA
 SELECT u.nombre_usuario, te.total_ediciones
 FROM usuario u JOIN total_ediciones te ON u.nombre_usuario = te.nombre_usuario
 WHERE te.total_ediciones=(SELECT MAX(total_ediciones)
