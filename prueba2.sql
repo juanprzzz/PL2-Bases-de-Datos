@@ -299,6 +299,7 @@ LIMIT 10;
 \echo 'Consulta 3' 
 --revisar! -------------------------------------------------------------
 --3. Disco con mayor duración de la colección. Construir la expresión equivalente en álgebra relacional.
+/*
 SELECT  d.titulo_disco, --suponemos que por disco se refiere solo a la pk y duracion para comprobar
         d.anio_publicacion, 
         SUM(EXTRACT(EPOCH FROM c.duracion)) / 60 AS duracion_total --SUM(c.duracion) AS duracion_total
@@ -307,8 +308,8 @@ WHERE c.duracion IS NOT NULL --si no pones esto no muestra la duracion del mayor
 GROUP BY d.titulo_disco, d.anio_publicacion --Como cada disco tiene varias canciones, necesitamos agrupar todas las canciones del mismo disco para poder sumar sus duraciones. Sin GROUP BY, el SUM(c.duracion) intentaría sumar todas las duraciones en una única cifra sin diferenciar los discos
 ORDER BY duracion_total desc
 LIMIT 1;
-
-\echo 'SOLUCIÓN CON SENTIDO PARA CONSULTA 3'
+*/
+---FORMA MÁS SENCILLA
 SELECT c.titulo_disco, c.duracion
 FROM cancion c
 WHERE c.duracion = (SELECT MAX(c.duracion)
