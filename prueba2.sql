@@ -6,7 +6,7 @@ BEGIN;
 
 --------------------------------Tablas finales----------------------------
 
-\echo 'creando el esquema final para la BBDD'
+\echo 'Creando el esquema final para la BBDD'
 
 CREATE TABLE IF NOT EXISTS grupo(
     nombre_grupo TEXT,
@@ -53,16 +53,16 @@ CREATE TABLE IF NOT EXISTS cancion(
     
     titulo_cancion TEXT,
     duracion TIME,
-    CONSTRAINT cancion_pk PRIMARY KEY (titulo_cancion,titulo_disco,anio_publicacion), ----debil identificativa
+    CONSTRAINT cancion_pk PRIMARY KEY (titulo_cancion,titulo_disco,anio_publicacion),
     CONSTRAINT cancion_fk FOREIGN KEY (titulo_disco,anio_publicacion) REFERENCES disco(titulo_disco,anio_publicacion)MATCH FULL
     ON DELETE RESTRICT ON UPDATE CASCADE   
 );
 
 CREATE TABLE IF NOT EXISTS usuario( 
     nombre_usuario TEXT,
-    nombre TEXT,
-    email TEXT,
-    passwd TEXT,
+    nombre TEXT NOT NULL,
+    email TEXT NOT  NULL,
+    passwd TEXT NOT NULL,
     CONSTRAINT usuario_pk PRIMARY KEY (nombre_usuario)
 );
 
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS tiene( --usuario-ediciones
     CONSTRAINT tiene_pk PRIMARY KEY (formato,pais,anio_edicion,nombre_usuario,titulo_disco,anio_publicacion ),
     CONSTRAINT tiene_edicion_fk FOREIGN KEY (formato,anio_edicion,pais,titulo_disco,anio_publicacion) REFERENCES edicion(formato,anio_edicion,pais,titulo_disco,anio_publicacion) MATCH FULL
     ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT tiene_usuario_fk FOREIGN KEY (nombre_usuario) REFERENCES usuario(nombre_usuario) MATCH FULL --poner la coma antes de restrict???????
+    CONSTRAINT tiene_usuario_fk FOREIGN KEY (nombre_usuario) REFERENCES usuario(nombre_usuario) MATCH FULL
     ON DELETE RESTRICT ON UPDATE CASCADE 
 );
 
@@ -140,13 +140,13 @@ CREATE TABLE IF NOT EXISTS usuarioTieneEdicion(
     estado TEXT
 );
 
-\COPY discoscsv FROM 'discos.csv' DELIMITER ';' CSV HEADER NULL 'NULL'; ---tener en cuenta que puede haber nulos. cargar strings null como null real para que no lo cargue como text null
+\COPY discoscsv FROM 'discos.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
 \COPY usuarioscsv FROM 'usuarios.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
 \COPY cancionescsv FROM 'canciones.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
 \COPY edicionescsv FROM 'ediciones.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
 \COPY usuarioDeseaDisco FROM 'usuario_desea_disco.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
 \COPY usuarioTieneEdicion FROM 'usuario_tiene_edicion.csv' DELIMITER ';' CSV HEADER NULL 'NULL';
-\echo 'HTTP1.1 200 OK prueba2.sql'
+
 
 ------------------pasamos de temporales a finales---------------------
 
@@ -155,7 +155,6 @@ SELECT DISTINCT ON (nombreGrupo)
 NombreGrupo,
 urlGrupo 
 FROM discoscsv;
-\echo 'grupo hecho'
 
 INSERT INTO disco (titulo_disco, anio_publicacion, nombre_grupo, url_portada)
 SELECT DISTINCT ON (NombreDisco, añoLanzamiento)
@@ -164,19 +163,16 @@ SELECT DISTINCT ON (NombreDisco, añoLanzamiento)
        NombreGrupo,
        urlPortada
 FROM discoscsv;
-\echo 'disco hecho'
 
---descomponer genero en varias filas
 INSERT INTO genero (titulo_disco, anio_publicacion, genero)
 SELECT DISTINCT ON (nombreDisco, añoLanzamiento)
 NombreDisco,
        CAST(añoLanzamiento AS SMALLINT),
        regexp_split_to_table(
-           regexp_replace(trim(both '[]' from generos), '''', '', 'g'),  -- Elimina las comillas simples
-           '\s*,\s*'  -- Divide en filas usando la coma (con espacios opcionales alrededor)
+           regexp_replace(trim(both '[]' from generos), '''', '', 'g'),  
+           '\s*,\s*'
        )
-FROM discoscsv;
-\echo 'genero hecho'    
+FROM discoscsv;    
 
 INSERT INTO edicion (titulo_disco, anio_publicacion, formato, pais, anio_edicion)
 SELECT DISTINCT ON (NombreDisco, añoLanzamiento, formato, paisEdicion, añoEdicion)
@@ -186,8 +182,6 @@ disco.NombreDisco,
        edicion.paisEdicion,
        CAST(edicion.añoEdicion  AS SMALLINT)
 FROM discoscsv disco JOIN edicionescsv edicion ON disco.idDisco = edicion.idDisco;
-\echo 'edicion hecho'
-
 
 INSERT INTO usuario (nombre_usuario, nombre, email, passwd)
 SELECT  DISTINCT ON (nombreUsuario)
@@ -196,8 +190,6 @@ nombreUsuario,
        email,
        passwd
 FROM usuarioscsv;
-\echo 'usuario hecho'
-
 
 INSERT INTO tiene (formato,pais,anio_edicion,titulo_disco,anio_publicacion,nombre_usuario,estado)
 SELECT DISTINCT ON (formato, paisEdicion, añoEdicion, tituloDisco, añoLanzamiento, nombreUsuario)
@@ -209,14 +201,14 @@ SELECT DISTINCT ON (formato, paisEdicion, añoEdicion, tituloDisco, añoLanzamie
     usuarioTieneEdicion.nombreUsuario,
     usuarioTieneEdicion.estado
 FROM usuarioTieneEdicion JOIN usuario ON usuario.nombre_usuario = usuarioTieneEdicion.nombreUsuario 
-    JOIN edicion ON (
+    /*JOIN edicion ON (
     edicion.formato = usuarioTieneEdicion.formato AND 
     edicion.anio_edicion  = CAST(usuarioTieneEdicion.añoEdicion AS SMALLINT) AND 
     edicion.pais = usuarioTieneEdicion.paisEdicion AND 
     edicion.titulo_disco = usuarioTieneEdicion.tituloDisco AND 
-    edicion.anio_publicacion = CAST(usuarioTieneEdicion.añoLanzamiento AS SMALLINT)
-);
-\echo 'tiene hecho'
+    edicion.anio_publicacion = CAST(usuarioTieneEdicion.añoLanzamiento AS SMALLINT))*/
+;
+SELECT * from tiene LIMIT 10;
 
 INSERT INTO desea (titulo_disco, anio_publicacion, nombre_usuario)
 SELECT DISTINCT ON (tituloDisco, añoLanzamiento, nombreUsuario)
@@ -224,7 +216,6 @@ SELECT DISTINCT ON (tituloDisco, añoLanzamiento, nombreUsuario)
        CAST(añoLanzamiento AS SMALLINT),
        nombreUsuario
 FROM usuarioDeseaDisco JOIN usuario ON usuario.nombre_usuario = usuarioDeseaDisco.nombreUsuario JOIN disco ON (disco.titulo_disco= usuarioDeseaDisco.tituloDisco AND disco.anio_publicacion = CAST(usuarioDeseaDisco.añoLanzamiento AS SMALLINT));
-\echo 'desea hecho'
 
 
 INSERT INTO cancion(titulo_disco, anio_publicacion, titulo_cancion, duracion)
@@ -234,34 +225,14 @@ disco.NombreDisco,
     cancion.tituloCancion, 
     MAKE_INTERVAL (
             mins => SPLIT_PART(cancion.duracion, ':', 1)::INTEGER, 
-            secs => split_part(cancion.duracion, ':', 2)::INTEGER) ::TIME --PROBAR QUE FUNCIONE --Duración es de la forma 00:00 hay que pasarlo a time
-FROM discoscsv disco JOIN cancionescsv cancion ON disco.idDisco = cancion.idDisco;--Tengo que juntar las dos tablas para conseguir los datos que quiero
-\echo 'cancion hecho'
+            secs => split_part(cancion.duracion, ':', 2)::INTEGER) ::TIME
+            FROM discoscsv disco JOIN cancionescsv cancion ON disco.idDisco = cancion.idDisco;
 
-\echo '-----------------------MOSTRANDO TABLAS--------------------'
-
-SELECT * FROM cancion LIMIT 10; 
-\d cancion;
-SELECT * FROM desea LIMIT 10; ---Algunos indica año 0,en el csv original tambien, pero quizas lo pone para indicar null
-\d desea;
-SELECT * FROM disco LIMIT 10; 
-\d disco;
-SELECT * FROM edicion LIMIT 10; 
-\d edicion;
-SELECT * FROM genero LIMIT 10; 
-\d genero;
-SELECT * FROM grupo LIMIT 10; 
-\d grupo;
-SELECT * FROM tiene LIMIT 10; 
-\d tiene;
-SELECT * FROM usuario LIMIT 10; 
-\d usuario;
 ---------------------\o prueba.txt
 
 \echo '-----------------------MOSTRANDO CONSULTAS--------------------'
 
 \echo 'Consulta 1'
----REVISADO
 --1. Mostrar los discos que tengan más de 5 canciones. Construir la expresión equivalente en álgebra relacional.
 SELECT cancion.titulo_disco, cancion.anio_publicacion
 FROM cancion
@@ -282,20 +253,18 @@ JOIN tiene ON (
 )
 JOIN usuario ON tiene.nombre_usuario = usuario.nombre_usuario
 WHERE usuario.nombre = 'Juan García Gómez'
-ORDER BY edicion.anio_edicion, edicion.titulo_disco; --usuario.nombre_usuario = 'juangomez'
+ORDER BY edicion.anio_edicion, edicion.titulo_disco;
 \echo 'Consulta 3' 
 --3. Disco con mayor duración de la colección. Construir la expresión equivalente en álgebra relacional.
-
 WITH  disco_duracion AS(
     SELECT c.titulo_disco, SUM(c.duracion) AS duracion_total
-    FROM cancion c --JOIN disco d ON (c.titulo_disco=d.titulo_disco && c.anio_publicacion=d.anio_publicacion)
+    FROM cancion c
     GROUP BY (c.titulo_disco)
 )
 
 SELECT dd.titulo_disco, dd.duracion_total
 FROM disco_duracion dd
 WHERE duracion_total=(SELECT MAX(duracion_total) FROM disco_duracion dd);
-
 
 \echo 'Consulta 4'
 --4. De los discos que tiene en su lista de deseos el usuario Juan García Gómez, indicar el nombre de los grupos musicales que los interpretan.
@@ -305,28 +274,23 @@ SELECT  d.titulo_disco,
 FROM usuario u JOIN desea ds ON u.nombre_usuario=ds.nombre_usuario
     JOIN disco d ON ds.titulo_disco=d.titulo_disco AND ds.anio_publicacion=d.anio_publicacion
 WHERE u.nombre= 'Juan García Gómez'
-ORDER BY d.anio_publicacion, d.titulo_disco;--u.nombre_usuario='juangomez'
+ORDER BY d.anio_publicacion, d.titulo_disco;
 
-\echo 'Consulta 5' --REVISADO (QUITAR LIMIT) ¿Cómo puede salir antes una edición que un disco?
+\echo 'Consulta 5'
 --5. Mostrar los discos publicados entre 1970 y 1972 junto con sus ediciones ordenados por el año de publicación.
 SELECT e.*
 FROM edicion e JOIN disco d ON d.titulo_disco = e.titulo_disco AND d.anio_publicacion=e.anio_publicacion
 WHERE d.anio_publicacion BETWEEN '1970' AND '1972'
 ORDER BY e.anio_publicacion, e.anio_edicion, d.titulo_disco;
 
-
-
-
-
 \echo 'Consulta 6'
 --6. Listar el nombre de todos los grupos que han publicado discos del género ‘Electronic’. Construir la expresión equivalente en álgebra relacional.
-SELECT DISTINCT d.nombre_grupo  --distinct para que cada grupo salga solo 1 vez
+SELECT DISTINCT d.nombre_grupo
 FROM disco d JOIN genero g ON g.titulo_disco=d.titulo_disco AND g.anio_publicacion=d.anio_publicacion
 WHERE g.genero='Electronic';
 
 \echo 'Consulta 7'
 --7. Lista de discos con la duración total del mismo, editados antes del año 2000.
-
 SELECT  d.titulo_disco, 
         d.anio_publicacion,
         e.anio_edicion,
@@ -336,8 +300,7 @@ FROM disco d JOIN edicion e ON e.titulo_disco=d.titulo_disco AND e.anio_publicac
 WHERE e.anio_edicion <=2000 AND e.anio_edicion > 0
 GROUP BY 
     d.titulo_disco, d.anio_publicacion, e.anio_edicion
-ORDER BY e.anio_edicion desc, d.anio_publicacion
-LIMIT 50;
+ORDER BY e.anio_edicion desc, d.anio_publicacion;
 
 \echo 'Consulta 8' ----NOMBRES CAMBIADOS YA QUE LORENA NO DESEABA NINGÚN DISCO DE JUAN GARCÍA GÓMEZ
 --8. Lista de ediciones de discos deseados por el usuario Lorena Sáez Pérez que tiene el usuario Juan García Gómez
@@ -366,7 +329,6 @@ FROM edicion e JOIN tiene t ON (
     e.anio_publicacion = t.anio_publicacion
 ) JOIN usuario u ON u.nombre_usuario=t.nombre_usuario
 WHERE u.nombre = 'Juan García Gómez' AND t.estado IN ('NM', 'M');
-
 
 \echo 'Consulta 10'
 --10. Listar todos los usuarios junto al número de ediciones que tiene de todos los discos junto al año de lanzamiento de su disco más antiguo, el año de lanzamiento de su disco más nuevo, y el año medio de todos sus discos de su colección
@@ -403,23 +365,4 @@ FROM usuario u JOIN total_ediciones te ON u.nombre_usuario = te.nombre_usuario
 WHERE te.total_ediciones=(SELECT MAX(total_ediciones)
         FROM total_ediciones);
 
-
-
-
-
-
-
-
-
-
-
-
-
 ROLLBACK;
-
-
---para la hora: Make interval, split por los :, tochar(intervalo) h:m:s para coger el intervalo y pasarlo a caracteres , cast a time (con duracion::time)
---para los generos: para quitar [''] con replace (solo reemplaza 1 char) o regexp_replace (meter expresion regular)
---para evitar error por clave duplicada
---insert into usuarios      select      distinct on(nombreUsuario),email,.....//resto de atrib
-
