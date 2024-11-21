@@ -316,18 +316,12 @@ WHERE u.nombre = 'Marta Moreno Díaz';
 
 \echo 'Consulta 9' 
 --9. Lista todas las ediciones de los discos que tiene el usuario Gómez García en un estado NM o M. Construir la expresión equivalente en álgebra relacional.
-SELECT  e.formato,
-        e.pais,
-        e.anio_edicion,
-        e.titulo_disco,
-        e.anio_publicacion
-FROM edicion e JOIN tiene t ON (
-    e.formato = t.formato AND 
-    e.pais = t.pais AND 
-    e.anio_edicion = t.anio_edicion AND 
-    e.titulo_disco = t.titulo_disco AND 
-    e.anio_publicacion = t.anio_publicacion
-) JOIN usuario u ON u.nombre_usuario=t.nombre_usuario
+SELECT  t.formato,
+        t.pais,
+        t.anio_edicion,
+        t.titulo_disco,
+        t.anio_publicacion
+FROM tiene t JOIN usuario u ON u.nombre_usuario=t.nombre_usuario
 WHERE u.nombre = 'Juan García Gómez' AND t.estado IN ('NM', 'M');
 
 \echo 'Consulta 10'
