@@ -388,12 +388,14 @@ WHERE u.nombre = 'Juan García Gómez' AND t.estado IN ('NM', 'M'); --AND (t.est
 
 \echo 'Consulta 10'---REVISADO (HAY AÑOS 0)
 --10. Listar todos los usuarios junto al número de ediciones que tiene de todos los discos junto al año de lanzamiento de su disco más antiguo, el año de lanzamiento de su disco más nuevo, y el año medio de todos sus discos de su colección
-SELECT u.nombre, 
-COUNT(t.titulo_disco) AS Nº_ediciones, 
-MIN(t.anio_publicacion) AS disco_más_antiguo, 
-MAX(t.anio_publicacion) AS disco_más_nuevo, 
-CAST(AVG(CAST(t.anio_publicacion AS SMALLINT))AS SMALLINT) AS media_años
+SELECT 
+    u.nombre, 
+    COUNT(t.titulo_disco) AS Nº_ediciones, 
+    MIN(t.anio_publicacion) AS disco_más_antiguo, 
+    MAX(t.anio_publicacion) AS disco_más_nuevo, 
+    ROUND(AVG(CAST(t.anio_publicacion AS SMALLINT))) AS media_años
 FROM usuario u JOIN tiene t ON u.nombre_usuario = t.nombre_usuario
+WHERE t.anio_publicacion>0
 GROUP BY u.nombre;
 \echo 'Consulta 11'
 ------------------------------------revisar
