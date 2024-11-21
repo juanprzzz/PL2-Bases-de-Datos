@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS disco(
     nombre_grupo TEXT,
 
     titulo_disco TEXT,
-    anio_publicacion TEXT,
+    anio_publicacion SMALLINT,
     url_portada TEXT,
     CONSTRAINT disco_pk PRIMARY KEY (titulo_disco,anio_publicacion),
     CONSTRAINT disco_fk FOREIGN KEY (nombre_grupo) REFERENCES grupo(nombre_grupo) MATCH FULL
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS disco(
 
 CREATE TABLE IF NOT EXISTS genero( 
     titulo_disco TEXT,
-    anio_publicacion TEXT,
+    anio_publicacion SMALLINT,
 
     genero TEXT,
     CONSTRAINT genero_pk PRIMARY KEY (genero,titulo_disco,anio_publicacion),
@@ -38,10 +38,10 @@ CREATE TABLE IF NOT EXISTS genero(
 
 CREATE TABLE IF NOT EXISTS edicion(
     titulo_disco TEXT,
-    anio_publicacion TEXT,
+    anio_publicacion SMALLINT,
     formato TEXT,
     pais text,
-    anio_edicion TEXT,
+    anio_edicion SMALLINT,
     CONSTRAINT edicion_pk PRIMARY KEY (formato,anio_edicion,pais,titulo_disco,anio_publicacion), --titulo_disco,anio_publicacion
     CONSTRAINT edicion_fk FOREIGN KEY (titulo_disco,anio_publicacion) REFERENCES disco(titulo_disco,anio_publicacion) MATCH FULL
     ON DELETE RESTRICT ON UPDATE CASCADE  
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS edicion(
 
 CREATE TABLE IF NOT EXISTS cancion(
     titulo_disco TEXT,
-    anio_publicacion TEXT,
+    anio_publicacion SMALLINT,
     
     titulo_cancion TEXT,
     duracion TIME,
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS usuario(
 
 CREATE TABLE IF NOT EXISTS desea( --disco-usuario 
     titulo_disco TEXT,
-    anio_publicacion TEXT,
+    anio_publicacion SMALLINT,
     nombre_usuario TEXT, 
     CONSTRAINT desea_pk PRIMARY KEY (titulo_disco,anio_publicacion,nombre_usuario),
     CONSTRAINT desea_disco_fk FOREIGN KEY (titulo_disco,anio_publicacion) REFERENCES disco(titulo_disco,anio_publicacion)MATCH FULL
@@ -83,9 +83,9 @@ CREATE TABLE IF NOT EXISTS desea( --disco-usuario
 CREATE TABLE IF NOT EXISTS tiene( --usuario-ediciones 
     formato TEXT,
     pais TEXT,
-    anio_edicion TEXT,
+    anio_edicion SMALLINT,
     titulo_disco TEXT,
-    anio_publicacion TEXT,
+    anio_publicacion SMALLINT,
     nombre_usuario TEXT,
     estado TEXT,  
     CONSTRAINT tiene_pk PRIMARY KEY (formato,pais,anio_edicion,nombre_usuario,titulo_disco,anio_publicacion ),
@@ -160,7 +160,7 @@ FROM discoscsv;
 INSERT INTO disco (titulo_disco, anio_publicacion, nombre_grupo, url_portada)
 SELECT DISTINCT ON (NombreDisco, añoLanzamiento)
     NombreDisco, 
-        añoLanzamiento,  
+        CAST(añoLanzamiento AS SMALLINT),  
        NombreGrupo,
        urlPortada
 FROM discoscsv;
@@ -170,7 +170,7 @@ FROM discoscsv;
 INSERT INTO genero (titulo_disco, anio_publicacion, genero)
 SELECT DISTINCT ON (nombreDisco, añoLanzamiento)
 NombreDisco,
-       añoLanzamiento,
+       CAST(añoLanzamiento AS SMALLINT),
        regexp_split_to_table(
            regexp_replace(trim(both '[]' from generos), '''', '', 'g'),  -- Elimina las comillas simples
            '\s*,\s*'  -- Divide en filas usando la coma (con espacios opcionales alrededor)
@@ -181,10 +181,10 @@ FROM discoscsv;
 INSERT INTO edicion (titulo_disco, anio_publicacion, formato, pais, anio_edicion)
 SELECT DISTINCT ON (NombreDisco, añoLanzamiento, formato, paisEdicion, añoEdicion)
 disco.NombreDisco,
-       disco.añoLanzamiento,
+       CAST(disco.añoLanzamiento AS SMALLINT),
        edicion.formato,
        edicion.paisEdicion,
-       edicion.añoEdicion 
+       CAST(edicion.añoEdicion  AS SMALLINT)
 FROM discoscsv disco JOIN edicionescsv edicion ON disco.idDisco = edicion.idDisco;
 \echo 'edicion hecho'
 
@@ -203,34 +203,34 @@ INSERT INTO tiene (formato,pais,anio_edicion,titulo_disco,anio_publicacion,nombr
 SELECT DISTINCT ON (formato, paisEdicion, añoEdicion, tituloDisco, añoLanzamiento, nombreUsuario)
     usuarioTieneEdicion.formato,
     usuarioTieneEdicion.paisEdicion,
-    usuarioTieneEdicion.añoEdicion,
+    CAST(usuarioTieneEdicion.añoEdicion AS SMALLINT),
     usuarioTieneEdicion.tituloDisco,
-    usuarioTieneEdicion.añoLanzamiento,
+    CAST(usuarioTieneEdicion.añoLanzamiento AS SMALLINT),
     usuarioTieneEdicion.nombreUsuario,
     usuarioTieneEdicion.estado
 FROM usuarioTieneEdicion JOIN usuario ON usuario.nombre_usuario = usuarioTieneEdicion.nombreUsuario 
     JOIN edicion ON (
     edicion.formato = usuarioTieneEdicion.formato AND 
-    edicion.anio_edicion = usuarioTieneEdicion.añoEdicion AND 
+    edicion.anio_edicion  = CAST(usuarioTieneEdicion.añoEdicion AS SMALLINT) AND 
     edicion.pais = usuarioTieneEdicion.paisEdicion AND 
     edicion.titulo_disco = usuarioTieneEdicion.tituloDisco AND 
-    edicion.anio_publicacion = usuarioTieneEdicion.añoLanzamiento
+    edicion.anio_publicacion = CAST(usuarioTieneEdicion.añoLanzamiento AS SMALLINT)
 );
 \echo 'tiene hecho'
 
 INSERT INTO desea (titulo_disco, anio_publicacion, nombre_usuario)
 SELECT DISTINCT ON (tituloDisco, añoLanzamiento, nombreUsuario)
     tituloDisco,
-       añoLanzamiento,
+       CAST(añoLanzamiento AS SMALLINT),
        nombreUsuario
-FROM usuarioDeseaDisco JOIN usuario ON usuario.nombre_usuario = usuarioDeseaDisco.nombreUsuario JOIN disco ON (disco.titulo_disco= usuarioDeseaDisco.tituloDisco AND disco.anio_publicacion = usuarioDeseaDisco.añoLanzamiento);
+FROM usuarioDeseaDisco JOIN usuario ON usuario.nombre_usuario = usuarioDeseaDisco.nombreUsuario JOIN disco ON (disco.titulo_disco= usuarioDeseaDisco.tituloDisco AND disco.anio_publicacion = CAST(usuarioDeseaDisco.añoLanzamiento AS SMALLINT));
 \echo 'desea hecho'
 
 
 INSERT INTO cancion(titulo_disco, anio_publicacion, titulo_cancion, duracion)
 SELECT DISTINCT ON (tituloCancion, NombreDisco, añoLanzamiento)
 disco.NombreDisco, 
-    disco.añoLanzamiento, 
+    CAST(disco.añoLanzamiento AS SMALLINT), 
     cancion.tituloCancion, 
     MAKE_INTERVAL (
             mins => SPLIT_PART(cancion.duracion, ':', 1)::INTEGER, 
@@ -266,7 +266,8 @@ SELECT * FROM usuario LIMIT 10;
 SELECT cancion.titulo_disco, cancion.anio_publicacion
 FROM cancion
 GROUP BY cancion.titulo_disco,  cancion.anio_publicacion
-HAVING COUNT(*) > 5;
+HAVING COUNT(*) > 5
+ORDER BY cancion.anio_publicacion, cancion.titulo_disco;
 
 \echo 'Consulta 2' 
 -- Mostrar los vinilos que tiene el usuario Juan García Gómez junto con el título del disco, y el país y año de edición del mismo
@@ -280,7 +281,8 @@ JOIN tiene ON (
     edicion.anio_publicacion = tiene.anio_publicacion
 )
 JOIN usuario ON tiene.nombre_usuario = usuario.nombre_usuario
-WHERE usuario.nombre = 'Juan García Gómez'; --usuario.nombre_usuario = 'juangomez'
+WHERE usuario.nombre = 'Juan García Gómez'
+ORDER BY edicion.anio_edicion, edicion.titulo_disco; --usuario.nombre_usuario = 'juangomez'
 \echo 'Consulta 3' 
 --3. Disco con mayor duración de la colección. Construir la expresión equivalente en álgebra relacional.
 
@@ -302,32 +304,18 @@ SELECT  d.titulo_disco,
         d.nombre_grupo
 FROM usuario u JOIN desea ds ON u.nombre_usuario=ds.nombre_usuario
     JOIN disco d ON ds.titulo_disco=d.titulo_disco AND ds.anio_publicacion=d.anio_publicacion
-WHERE u.nombre= 'Juan García Gómez';--u.nombre_usuario='juangomez'
+WHERE u.nombre= 'Juan García Gómez'
+ORDER BY d.anio_publicacion, d.titulo_disco;--u.nombre_usuario='juangomez'
 
 \echo 'Consulta 5' --REVISADO (QUITAR LIMIT) ¿Cómo puede salir antes una edición que un disco?
+--5. Mostrar los discos publicados entre 1970 y 1972 junto con sus ediciones ordenados por el año de publicación.
 SELECT e.*
 FROM edicion e JOIN disco d ON d.titulo_disco = e.titulo_disco AND d.anio_publicacion=e.anio_publicacion
 WHERE d.anio_publicacion BETWEEN '1970' AND '1972'
-ORDER BY d.titulo_disco, e.anio_publicacion;
---5. Mostrar los discos publicados entre 1970 y 1972 junto con sus ediciones ordenados por el año de publicación.
-/*SELECT  d.titulo_disco, 
-        d.anio_publicacion, 
-        d.nombre_grupo,
-        e.formato,
-        e.pais,
-        e.anio_edicion
-FROM disco d JOIN edicion e ON e.titulo_disco=d.titulo_disco AND e.anio_publicacion=d.anio_publicacion
-WHERE CAST(d.anio_publicacion AS INTEGER)>=1970 AND CAST(d.anio_publicacion AS INTEGER)<=1972  ---se podria usar between tambien?
-ORDER BY d.anio_publicacion
-LIMIT 50;*/
-SELECT e.titulo_disco, 
-       e.anio_publicacion, 
-       e.formato,
-       e.pais,
-       e.anio_edicion
-FROM edicion e
-WHERE CAST(e.anio_publicacion AS INTEGER) BETWEEN 1970 AND 1972
-ORDER BY e.anio_publicacion;
+ORDER BY e.anio_publicacion, e.anio_edicion, d.titulo_disco;
+
+
+
 
 
 \echo 'Consulta 6'
@@ -337,33 +325,27 @@ FROM disco d JOIN genero g ON g.titulo_disco=d.titulo_disco AND g.anio_publicaci
 WHERE g.genero='Electronic';
 
 \echo 'Consulta 7'
----------------------------   salen duraciones null. es normal?
 --7. Lista de discos con la duración total del mismo, editados antes del año 2000.
 
 SELECT  d.titulo_disco, 
         d.anio_publicacion,
-        e.anio_edicion, --sobra, debug
-        SUM(c.duracion) AS duracion_total --duracion en minutos 
+        e.anio_edicion,
+        SUM(c.duracion) AS duracion_total
 FROM disco d JOIN edicion e ON e.titulo_disco=d.titulo_disco AND e.anio_publicacion=d.anio_publicacion
     JOIN cancion c ON d.titulo_disco = c.titulo_disco AND d.anio_publicacion = c.anio_publicacion
-WHERE CAST(e.anio_edicion AS INTEGER)<=2000
+WHERE e.anio_edicion <=2000 AND e.anio_edicion > 0
 GROUP BY 
-    d.titulo_disco, d.anio_publicacion, e.anio_edicion --si no pongo esto da error
-ORDER BY e.anio_edicion desc --sobra, debug
+    d.titulo_disco, d.anio_publicacion, e.anio_edicion
+ORDER BY e.anio_edicion desc, d.anio_publicacion
 LIMIT 50;
 
-\echo 'Consulta 8' ----REVISADO (NOMBRES CAMBIADOS YA QUE LORENA NO DESEABA NINGÚN DISCO DE JUAN GARCÍA GÓMEZ)
-/*
+\echo 'Consulta 8' ----NOMBRES CAMBIADOS YA QUE LORENA NO DESEABA NINGÚN DISCO DE JUAN GARCÍA GÓMEZ
 --8. Lista de ediciones de discos deseados por el usuario Lorena Sáez Pérez que tiene el usuario Juan García Gómez
-USAMOS SUBCONSULTA TEMPORAL CON WITH PARA SIMPLIFICAR
-PRIMERO CREAMOS UNA SUBCONSULTA CON WITH PARA SABER LOS DISCOS QUE TIENE JUAN GARCÍA GÓMEZ
-*/
 WITH juan_gomez_tiene as(
     SELECT t.titulo_disco, t.anio_publicacion
     FROM tiene t JOIN usuario u ON t.nombre_usuario = u.nombre_usuario
     WHERE u.nombre = 'Marta Díaz Moreno'
 )
---AHORA HACEMOS UN JOIN ENTRE LOS QUE TIENE JUAN GARCÍA GÓMEZ Y LOS QUE DESEA LORENA (EN EL CSV NO HAY NINGUNO)
 SELECT d.titulo_disco, d.anio_publicacion
 FROM desea d JOIN juan_gomez_tiene jg ON d.titulo_disco=jg.titulo_disco
 JOIN usuario u ON u.nombre_usuario = d.nombre_usuario
@@ -383,38 +365,39 @@ FROM edicion e JOIN tiene t ON (
     e.titulo_disco = t.titulo_disco AND 
     e.anio_publicacion = t.anio_publicacion
 ) JOIN usuario u ON u.nombre_usuario=t.nombre_usuario
-WHERE u.nombre = 'Juan García Gómez' AND t.estado IN ('NM', 'M'); --AND (t.estado='NM' OR t.estado='M') --t.nombre_usuario='juangomez'
+WHERE u.nombre = 'Juan García Gómez' AND t.estado IN ('NM', 'M');
 
 
-\echo 'Consulta 10'---REVISADO (HAY AÑOS 0)
+\echo 'Consulta 10'
 --10. Listar todos los usuarios junto al número de ediciones que tiene de todos los discos junto al año de lanzamiento de su disco más antiguo, el año de lanzamiento de su disco más nuevo, y el año medio de todos sus discos de su colección
 SELECT 
     u.nombre, 
     COUNT(t.titulo_disco) AS Nº_ediciones, 
     MIN(t.anio_publicacion) AS disco_más_antiguo, 
     MAX(t.anio_publicacion) AS disco_más_nuevo, 
-    ROUND(AVG(CAST(t.anio_publicacion AS SMALLINT))) AS media_años
+    ROUND(AVG(t.anio_publicacion)) AS media_años
 FROM usuario u JOIN tiene t ON u.nombre_usuario = t.nombre_usuario
 WHERE t.anio_publicacion>0
-GROUP BY u.nombre;
+GROUP BY u.nombre
+ORDER BY u.nombre;
+
 \echo 'Consulta 11'
-------------------------------------revisar
 --11. Listar el nombre de los grupos que tienen más de 5 ediciones de sus discos en la base de datos
 SELECT  d.nombre_grupo
 FROM disco d JOIN edicion e ON (e.titulo_disco = d.titulo_disco AND e.anio_publicacion = d.anio_publicacion)
 GROUP BY 
     d.nombre_grupo
 HAVING 
-    COUNT(*) > 5;
+    COUNT(*) > 5
+ORDER BY d.nombre_grupo;
 
 \echo 'Consulta 12'
-
+--12. Lista el usuario que más discos, contando todas sus ediciones tiene en la base de datos
 WITH total_ediciones AS(
     SELECT t.nombre_usuario, COUNT(*) AS total_ediciones
     FROM tiene t
     GROUP BY t.nombre_usuario
-)--WITH ES UNA SUBCONSULTA (CREA UNA TABLA TEMPORAL DONDE SE MUESTRA CADA USUARIO Y TOTAL EDICIÓN DE CADA UNO)
---DESPUÉS DEL WITH HAY QUE HACER SIEMPRE UNA CONSULTA
+)
 SELECT u.nombre_usuario, te.total_ediciones
 FROM usuario u JOIN total_ediciones te ON u.nombre_usuario = te.nombre_usuario
 WHERE te.total_ediciones=(SELECT MAX(total_ediciones)
