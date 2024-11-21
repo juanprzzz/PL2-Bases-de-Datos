@@ -256,17 +256,17 @@ SELECT * FROM tiene LIMIT 10;
 \d tiene;
 SELECT * FROM usuario LIMIT 10; 
 \d usuario;
-
+---------------------\o prueba.txt
 
 \echo '-----------------------MOSTRANDO CONSULTAS--------------------'
 
 \echo 'Consulta 1'
 ---REVISADO
 --1. Mostrar los discos que tengan más de 5 canciones. Construir la expresión equivalente en álgebra relacional.
-SELECT cancion.titulo_disco
-FROM disco JOIN cancion ON disco.titulo_disco = cancion.titulo_disco AND disco.anio_publicacion = cancion.anio_publicacion---faltaria aniopublicacion
-GROUP BY cancion.titulo_disco
-HAVING COUNT(cancion.titulo_disco) > 5;
+SELECT cancion.titulo_disco, cancion.anio_publicacion
+FROM cancion
+GROUP BY cancion.titulo_disco,  cancion.anio_publicacion
+HAVING COUNT(*) > 5;
 
 \echo 'Consulta 2' 
 -- Mostrar los vinilos que tiene el usuario Juan García Gómez junto con el título del disco, y el país y año de edición del mismo
@@ -388,7 +388,11 @@ WHERE u.nombre = 'Juan García Gómez' AND t.estado IN ('NM', 'M'); --AND (t.est
 
 \echo 'Consulta 10'---REVISADO (HAY AÑOS 0)
 --10. Listar todos los usuarios junto al número de ediciones que tiene de todos los discos junto al año de lanzamiento de su disco más antiguo, el año de lanzamiento de su disco más nuevo, y el año medio de todos sus discos de su colección
-SELECT u.nombre, COUNT(t.titulo_disco) AS Nº_ediciones, MIN(t.anio_publicacion) AS disco_más_antiguo, MAX(t.anio_publicacion) AS disco_más_nuevo, CAST(AVG(CAST(t.anio_publicacion AS SMALLINT))AS SMALLINT) AS media_años
+SELECT u.nombre, 
+COUNT(t.titulo_disco) AS Nº_ediciones, 
+MIN(t.anio_publicacion) AS disco_más_antiguo, 
+MAX(t.anio_publicacion) AS disco_más_nuevo, 
+CAST(AVG(CAST(t.anio_publicacion AS SMALLINT))AS SMALLINT) AS media_años
 FROM usuario u JOIN tiene t ON u.nombre_usuario = t.nombre_usuario
 GROUP BY u.nombre;
 \echo 'Consulta 11'
@@ -399,7 +403,7 @@ FROM disco d JOIN edicion e ON (e.titulo_disco = d.titulo_disco AND e.anio_publi
 GROUP BY 
     d.nombre_grupo
 HAVING 
-    COUNT(e.formato) > 5;
+    COUNT(*) > 5;
 
 \echo 'Consulta 12'
 
@@ -413,7 +417,6 @@ SELECT u.nombre_usuario, te.total_ediciones
 FROM usuario u JOIN total_ediciones te ON u.nombre_usuario = te.nombre_usuario
 WHERE te.total_ediciones=(SELECT MAX(total_ediciones)
         FROM total_ediciones);
-
 
 
 
