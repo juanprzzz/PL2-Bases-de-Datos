@@ -242,18 +242,11 @@ ORDER BY cancion.anio_publicacion, cancion.titulo_disco;
 
 \echo 'Consulta 2' 
 -- Mostrar los vinilos que tiene el usuario Juan García Gómez junto con el título del disco, y el país y año de edición del mismo
-SELECT edicion.titulo_disco, edicion.pais, edicion.anio_edicion
-FROM edicion 
-JOIN tiene ON (
-    edicion.formato = tiene.formato AND 
-    edicion.pais = tiene.pais AND 
-    edicion.anio_edicion = tiene.anio_edicion AND 
-    edicion.titulo_disco = tiene.titulo_disco AND 
-    edicion.anio_publicacion = tiene.anio_publicacion
-)
+SELECT tiene.titulo_disco, tiene.pais, tiene.anio_edicion
+FROM tiene 
 JOIN usuario ON tiene.nombre_usuario = usuario.nombre_usuario
 WHERE usuario.nombre = 'Juan García Gómez'
-ORDER BY edicion.anio_edicion, edicion.titulo_disco;
+ORDER BY tiene.anio_edicion, tiene.titulo_disco;
 \echo 'Consulta 3' 
 --3. Disco con mayor duración de la colección. Construir la expresión equivalente en álgebra relacional.
 WITH  disco_duracion AS(
@@ -354,7 +347,7 @@ WITH total_ediciones AS(
     FROM tiene t
     GROUP BY t.nombre_usuario
 )
-SELECT u.nombre_usuario, te.total_ediciones
+SELECT u.nombre, te.total_ediciones
 FROM usuario u JOIN total_ediciones te ON u.nombre_usuario = te.nombre_usuario
 WHERE te.total_ediciones=(SELECT MAX(total_ediciones)
         FROM total_ediciones);
